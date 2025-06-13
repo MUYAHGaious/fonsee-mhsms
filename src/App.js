@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Globe, Shield, Users, AlertTriangle, TrendingUp, Search, Bell, User, Settings, Menu, X, Eye, Filter, Calendar, MapPin, Activity, Database, FileText, UserCheck, Lock, Mail, Github, ChevronDown, ChevronRight, Play, Pause, Download, Zap, BarChart3, Network, Cpu, Brain, Radar, Home, MessageSquare, Target, Clock, CheckCircle, XCircle, AlertCircle, Wifi, WifiOff, ChevronUp, MoreVertical, ExternalLink, Layers, Map, Hash, Flame, Camera, Video, FileImage, Share2, Flag, Heart, ThumbsUp, MessageCircle, RotateCcw, UserPlus, Building, Phone, Globe2, Monitor, Smartphone, Users2, AlertOctagon, TrendingDown, Sun, Moon, Loader2, Save, Trash2, Key, Vote, Send } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ComposedChart } from 'recharts';
+import InteractiveMap from './InteractiveMapLeaflet';
 
 // ==================== THEME SYSTEM ====================
 
@@ -285,12 +286,89 @@ const ThemeToggle = () => {
   );
 };
 
+// ==================== SHARED STATE FOR USER REPORTS ====================
+
+const UserReportsContext = React.createContext();
+
+const UserReportsProvider = ({ children }) => {
+  const [userReports, setUserReports] = useState([
+    {
+      id: 'USR-001',
+      type: 'misinformation',
+      platform: 'facebook',
+      url: 'https://facebook.com/example/post123',
+      description: 'False information about COVID-19 vaccines causing genetic mutations',
+      urgency: 'high',
+      contact: 'reporter@example.com',
+      timestamp: '2024-06-11 09:23:45',
+      status: 'under_review'
+    },
+    {
+      id: 'USR-002',
+      type: 'hate_speech',
+      platform: 'twitter',
+      url: 'https://twitter.com/example/status/456',
+      description: 'Hateful content targeting ethnic minorities in Nigeria',
+      urgency: 'critical',
+      contact: 'concerned@example.org',
+      timestamp: '2024-06-10 15:42:18',
+      status: 'investigating'
+    },
+    {
+      id: 'USR-003',
+      type: 'fake_news',
+      platform: 'reddit',
+      url: 'https://reddit.com/r/example/comments/123',
+      description: 'Fabricated news about bank collapse causing panic',
+      urgency: 'medium',
+      contact: '',
+      timestamp: '2024-06-09 11:05:33',
+      status: 'resolved'
+    }
+  ]);
+
+  const addUserReport = (report) => {
+    const newReport = {
+      ...report,
+      id: `USR-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      status: 'under_review'
+    };
+    setUserReports(prev => [newReport, ...prev]);
+    return newReport;
+  };
+
+  const updateUserReportStatus = (id, status) => {
+    setUserReports(prev => 
+      prev.map(report => 
+        report.id === id ? { ...report, status } : report
+      )
+    );
+  };
+
+  return (
+    <UserReportsContext.Provider value={{ userReports, addUserReport, updateUserReportStatus }}>
+      {children}
+    </UserReportsContext.Provider>
+  );
+};
+
+const useUserReports = () => {
+  const context = React.useContext(UserReportsContext);
+  if (!context) {
+    throw new Error('useUserReports must be used within a UserReportsProvider');
+  }
+  return context;
+};
+
 // ==================== MAIN APP COMPONENT ====================
 
 export default function FonSeeApp() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <UserReportsProvider>
+        <AppContent />
+      </UserReportsProvider>
     </ThemeProvider>
   );
 }
@@ -738,7 +816,7 @@ const AnalystWorkstation = ({ user, onLogout }) => {
       content: {
         text: "These people from [ethnic group] are destroying our economy. We need to stop them before they take everything from us. Share in all your groups.",
         author: {
-          name: "+237 6XX XXX XXX",
+          name: "RedditUser123",
           verified: false,
           groups: 23
         },
@@ -1398,12 +1476,10 @@ const AnalystWorkstation = ({ user, onLogout }) => {
             >
               <option value="all">All Platforms</option>
               <option value="Facebook">Facebook</option>
-              <option value="Twitter/X">Twitter/X</option>
-              <option value="WhatsApp">WhatsApp</option>
+              <option value="X (Twitter)">X (Twitter)</option>
               <option value="Instagram">Instagram</option>
               <option value="TikTok">TikTok</option>
-              <option value="Telegram">Telegram</option>
-              <option value="YouTube">YouTube</option>
+              <option value="Reddit">Reddit</option>
             </select>
           </div>
 
@@ -1722,7 +1798,7 @@ const LandingPage = ({ onAuthClick, onDemoClick }) => {
   const [stats] = useState({
     contentMonitored: 2480000,
     accuracyRate: 94,
-    platformsMonitored: 8,
+    platformsMonitored: 5,
     threatsDetected: 12500,
     countriesProtected: 15,
     responseTime: 2.3
@@ -1932,7 +2008,7 @@ const LandingPage = ({ onAuthClick, onDemoClick }) => {
                 className="px-8 py-4 text-lg"
               >
                 <UserPlus className="w-6 h-6 mr-3" />
-                Start Free Trial
+                Sign Up
               </Button>
             </div>
 
@@ -1961,9 +2037,10 @@ const LandingPage = ({ onAuthClick, onDemoClick }) => {
 
          {/* Right Column - 3D Cameroon */}
         <div className="flex justify-center lg:justify-end">
-          <div>
-          <img src="/map.png" alt="3D map of Cameroon" />          </div>
+          <div className="w-full max-w-lg">
+            <InteractiveMap theme={colors} />
           </div>
+        </div>
         </div>
 
         {/* Stats Section */}
@@ -2328,114 +2405,7 @@ const LandingPage = ({ onAuthClick, onDemoClick }) => {
           </div>
         </div>
 
-        {/* Pricing Preview Section */}
-        <div className="py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6" style={{ color: colors.text }}>
-              Flexible Plans for Every Organization
-            </h2>
-            <p className="text-xl max-w-3xl mx-auto" style={{ color: colors.textSecondary }}>
-              From small NGOs to government agencies, we have a plan that fits your needs
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Starter",
-                price: "$299",
-                period: "/month",
-                description: "Perfect for small organizations and NGOs",
-                features: [
-                  "Up to 100K content pieces/month",
-                  "3 platform monitoring",
-                  "Basic AI detection",
-                  "Email alerts",
-                  "Standard support"
-                ],
-                popular: false,
-                color: colors.textSecondary
-              },
-              {
-                name: "Professional",
-                price: "$899",
-                period: "/month",
-                description: "Ideal for medium organizations and institutions",
-                features: [
-                  "Up to 1M content pieces/month",
-                  "8 platform monitoring",
-                  "Advanced AI detection",
-                  "Real-time alerts",
-                  "Priority support",
-                  "Custom reporting"
-                ],
-                popular: true,
-                color: colors.primary
-              },
-              {
-                name: "Enterprise",
-                price: "Custom",
-                period: "",
-                description: "For government agencies and large organizations",
-                features: [
-                  "Unlimited content monitoring",
-                  "All platform coverage",
-                  "Custom AI training",
-                  "Dedicated support",
-                  "On-premise deployment",
-                  "Advanced analytics"
-                ],
-                popular: false,
-                color: colors.secondary
-              }
-            ].map((plan, index) => (
-              <Card 
-                key={index} 
-                className={`p-8 transition-all duration-300 hover:scale-105 relative overflow-hidden ${plan.popular ? 'ring-2' : ''}`}
-                style={{ 
-                  ringColor: plan.popular ? colors.primary : 'transparent',
-                  background: plan.popular ? `linear-gradient(135deg, ${colors.primary}10, ${colors.primary}05)` : 'transparent'
-                }}
-              >
-                {plan.popular && (
-                  <div 
-                    className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-4 py-1 rounded-full text-xs font-medium text-white"
-                    style={{ backgroundColor: colors.primary }}
-                  >
-                    Most Popular
-                  </div>
-                )}
-                
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold mb-2" style={{ color: colors.text }}>{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold" style={{ color: plan.color }}>{plan.price}</span>
-                    <span className="text-lg" style={{ color: colors.textSecondary }}>{plan.period}</span>
-                  </div>
-                  <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>{plan.description}</p>
-                  
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center text-sm" style={{ color: colors.textSecondary }}>
-                        <CheckCircle className="w-4 h-4 mr-3 flex-shrink-0" style={{ color: colors.success }} />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Button 
-                    variant={plan.popular ? "primary" : "secondary"} 
-                    size="lg" 
-                    className="w-full"
-                    onClick={() => onAuthClick('register')}
-                  >
-                    {plan.name === "Enterprise" ? "Contact Sales" : "Start Free Trial"}
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
 
         {/* CTA Section */}
         <div className="py-20 text-center">
@@ -2456,16 +2426,7 @@ const LandingPage = ({ onAuthClick, onDemoClick }) => {
                   className="px-10 py-5 text-lg font-semibold"
                 >
                   <Eye className="w-6 h-6 mr-3" />
-                  Start Free Demo
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="lg" 
-                  onClick={() => onAuthClick('register')}
-                  className="px-10 py-5 text-lg"
-                >
-                  <Mail className="w-6 h-6 mr-3" />
-                  Contact Sales
+                  Try Demo
                 </Button>
               </div>
             </div>
@@ -2629,7 +2590,7 @@ const ExecutiveDashboard = ({ user, onLogout, onAnalystClick }) => {
     totalContent: 2480000,
     activeThreats: 23,
     accuracy: 94.2,
-    platforms: 8,
+    platforms: 5,
     lastUpdate: new Date()
   });
 
@@ -2667,13 +2628,10 @@ const ExecutiveDashboard = ({ user, onLogout, onAnalystClick }) => {
 
   const platformData = [
     { name: 'Facebook', threats: 35, color: '#1877F2' },
-    { name: 'Twitter/X', threats: 28, color: '#000000' },
-    { name: 'WhatsApp', threats: 22, color: '#25D366' },
+    { name: 'X (Twitter)', threats: 28, color: '#000000' },
     { name: 'TikTok', threats: 18, color: '#FE2C55' },
     { name: 'Instagram', threats: 15, color: '#E4405F' },
-    { name: 'YouTube', threats: 12, color: '#FF0000' },
-    { name: 'Telegram', threats: 8, color: '#0088CC' },
-    { name: 'Others', threats: 5, color: '#666666' }
+    { name: 'Reddit', threats: 12, color: '#FF4500' }
   ];
 
   const geographicData = [
@@ -2808,41 +2766,54 @@ const ExecutiveDashboard = ({ user, onLogout, onAnalystClick }) => {
   );
 
   const GeographicIntelligence = () => (
-    <Card className="p-6">
-      <h3 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: colors.text }}>
-        <Map className="w-5 h-5" style={{ color: colors.secondary }} />
-        Regional Intelligence
-      </h3>
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: colors.text }}>
+          <Map className="w-5 h-5" style={{ color: colors.secondary }} />
+          Interactive Threat Map
+        </h3>
+        
+        <div className="mb-6">
+          <InteractiveMap theme={colors} />
+        </div>
+      </Card>
       
-      <div className="space-y-4">
-        {geographicData.map((region, index) => (
-          <div 
-            key={region.region} 
-            className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
-            style={{ backgroundColor: colors.bgTertiary }}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ 
-                  backgroundColor: region.severity === 'high' ? colors.danger :
-                                   region.severity === 'medium' ? colors.warning : colors.success
-                }}
-              ></div>
-              <div>
-                <div className="font-medium" style={{ color: colors.text }}>{region.region}</div>
-                <div className="text-sm" style={{ color: colors.textSecondary }}>{region.population}M population</div>
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: colors.text }}>
+          <Map className="w-5 h-5" style={{ color: colors.secondary }} />
+          Regional Intelligence
+        </h3>
+        
+        <div className="space-y-4">
+          {geographicData.map((region, index) => (
+            <div 
+              key={region.region} 
+              className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+              style={{ backgroundColor: colors.bgTertiary }}
+            >
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ 
+                    backgroundColor: region.severity === 'high' ? colors.danger :
+                                     region.severity === 'medium' ? colors.warning : colors.success
+                  }}
+                ></div>
+                <div>
+                  <div className="font-medium" style={{ color: colors.text }}>{region.region}</div>
+                  <div className="text-sm" style={{ color: colors.textSecondary }}>{region.population}M population</div>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <div className="font-bold" style={{ color: colors.text }}>{region.threats}</div>
+                <div className="text-xs" style={{ color: colors.textMuted }}>active threats</div>
               </div>
             </div>
-            
-            <div className="text-right">
-              <div className="font-bold" style={{ color: colors.text }}>{region.threats}</div>
-              <div className="text-xs" style={{ color: colors.textMuted }}>active threats</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
+          ))}
+        </div>
+      </Card>
+    </div>
   );
 
   const renderTabContent = () => {
@@ -3023,6 +2994,148 @@ const ExecutiveDashboard = ({ user, onLogout, onAnalystClick }) => {
                     />
                   </RechartsPieChart>
                 </ResponsiveContainer>
+              </Card>
+            </div>
+
+            {/* Trending & Emergency Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Trending Topics */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold flex items-center gap-2" style={{ color: colors.text }}>
+                    <TrendingUp className="w-5 h-5" style={{ color: colors.warning }} />
+                    Trending Topics
+                  </h3>
+                  <Badge variant="warning" size="sm">Live</Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { topic: "Election Misinformation", mentions: 1247, trend: "+23%", severity: "high", platform: "Facebook" },
+                    { topic: "COVID-19 Vaccine Claims", mentions: 892, trend: "+15%", severity: "medium", platform: "Twitter" },
+                    { topic: "Economic Conspiracy", mentions: 634, trend: "+8%", severity: "medium", platform: "WhatsApp" },
+                    { topic: "Ethnic Tensions", mentions: 423, trend: "+45%", severity: "critical", platform: "TikTok" },
+                    { topic: "Government Policies", mentions: 312, trend: "-5%", severity: "low", platform: "Instagram" }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:scale-105" 
+                         style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium" style={{ color: colors.text }}>{item.topic}</span>
+                          <Badge 
+                            variant={item.severity === 'critical' ? 'danger' : item.severity === 'high' ? 'warning' : item.severity === 'medium' ? 'primary' : 'success'} 
+                            size="sm"
+                          >
+                            {item.severity}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span style={{ color: colors.textSecondary }}>{item.mentions} mentions</span>
+                          <span style={{ color: colors.textMuted }}>on {item.platform}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-semibold ${item.trend.startsWith('+') ? 'text-red-500' : 'text-green-500'}`}>
+                          {item.trend}
+                        </div>
+                        <div className="text-xs" style={{ color: colors.textMuted }}>24h</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.border }}>
+                  <Button variant="ghost" size="sm" className="w-full">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    View All Trending Topics
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Emergency Alerts */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold flex items-center gap-2" style={{ color: colors.text }}>
+                    <AlertTriangle className="w-5 h-5" style={{ color: colors.danger }} />
+                    Emergency Alerts
+                  </h3>
+                  <Badge variant="danger" size="sm">3 Active</Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { 
+                      id: "EMG-001", 
+                      title: "Mass Disinformation Campaign", 
+                      description: "Coordinated spread of false election information across multiple platforms",
+                      severity: "critical", 
+                      time: "2 min ago",
+                      location: "Yaoundé, Centre",
+                      status: "investigating"
+                    },
+                    { 
+                      id: "EMG-002", 
+                      title: "Hate Speech Surge", 
+                      description: "Significant increase in ethnic hate speech following political announcement",
+                      severity: "high", 
+                      time: "15 min ago",
+                      location: "Douala, Littoral",
+                      status: "monitoring"
+                    },
+                    { 
+                      id: "EMG-003", 
+                      title: "Viral Fake News", 
+                      description: "False health information spreading rapidly on WhatsApp groups",
+                      severity: "medium", 
+                      time: "1 hour ago",
+                      location: "Bamenda, Nord-Ouest",
+                      status: "contained"
+                    }
+                  ].map((alert, index) => (
+                    <div key={index} className="p-4 rounded-lg border-l-4 transition-all duration-200 hover:scale-105" 
+                         style={{ 
+                           backgroundColor: colors.bgTertiary, 
+                           border: `1px solid ${colors.border}`,
+                           borderLeftColor: alert.severity === 'critical' ? colors.danger : alert.severity === 'high' ? colors.warning : colors.primary
+                         }}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm" style={{ color: colors.textMuted }}>{alert.id}</span>
+                          <Badge 
+                            variant={alert.severity === 'critical' ? 'danger' : alert.severity === 'high' ? 'warning' : 'primary'} 
+                            size="sm"
+                          >
+                            {alert.severity}
+                          </Badge>
+                        </div>
+                        <span className="text-xs" style={{ color: colors.textMuted }}>{alert.time}</span>
+                      </div>
+                      
+                      <h4 className="font-medium mb-1" style={{ color: colors.text }}>{alert.title}</h4>
+                      <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>{alert.description}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-xs" style={{ color: colors.textMuted }}>
+                          <MapPin className="w-3 h-3" />
+                          {alert.location}
+                        </div>
+                        <Badge 
+                          variant={alert.status === 'investigating' ? 'warning' : alert.status === 'monitoring' ? 'primary' : 'success'} 
+                          size="sm"
+                        >
+                          {alert.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.border }}>
+                  <Button variant="danger" size="sm" className="w-full">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    View Emergency Dashboard
+                  </Button>
+                </div>
               </Card>
             </div>
 
@@ -3302,7 +3415,7 @@ const FAQPage = () => {
     },
     {
       question: "Which platforms does the system monitor?",
-      answer: "We monitor major social media platforms including Facebook, Twitter, Instagram, WhatsApp, TikTok, and YouTube. Our coverage is continuously expanding to include new platforms and communication channels."
+      answer: "We monitor major social media platforms including Facebook, X (Twitter), Instagram, TikTok, and Reddit. Our focus is on these key platforms where misinformation and hate speech are most prevalent."
     },
     {
       question: "How accurate is the detection system?",
@@ -3782,6 +3895,7 @@ const ImageDetectionPage = () => {
 // Report Page Component
 const ReportPage = () => {
   const { colors } = useTheme();
+  const { addUserReport } = useUserReports();
   const [reportData, setReportData] = useState({
     type: '',
     platform: '',
@@ -3792,13 +3906,16 @@ const ReportPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedReport, setSubmittedReport] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate submission
+    // Add report to context
     setTimeout(() => {
+      const newReport = addUserReport(reportData);
+      setSubmittedReport(newReport);
       setIsSubmitting(false);
       setSubmitted(true);
       setReportData({
@@ -3809,7 +3926,7 @@ const ReportPage = () => {
         urgency: 'medium',
         contact: ''
       });
-    }, 2000);
+    }, 1000);
   };
 
   const handleInputChange = (field, value) => {
@@ -3830,15 +3947,24 @@ const ReportPage = () => {
             </p>
             <div className="space-y-2 mb-6">
               <p style={{ color: colors.textSecondary }}>
-                <strong>Report ID:</strong> #RPT-{Date.now().toString().slice(-6)}
+                <strong>Report ID:</strong> #{submittedReport?.id || 'USR-' + Date.now().toString().slice(-6)}
               </p>
               <p style={{ color: colors.textSecondary }}>
                 <strong>Status:</strong> Under Review
               </p>
             </div>
-            <Button variant="primary" onClick={() => setSubmitted(false)}>
-              Submit Another Report
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="primary" onClick={() => setSubmitted(false)}>
+                Submit Another Report
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => window.location.href = '#reports'}
+                icon={FileText}
+              >
+                View All Reports
+              </Button>
+            </div>
           </Card>
         </div>
       </div>
@@ -3901,11 +4027,10 @@ const ReportPage = () => {
               >
                 <option value="">Select platform</option>
                 <option value="facebook">Facebook</option>
-                <option value="twitter">Twitter</option>
+                <option value="twitter">X (Twitter)</option>
                 <option value="instagram">Instagram</option>
-                <option value="whatsapp">WhatsApp</option>
                 <option value="tiktok">TikTok</option>
-                <option value="youtube">YouTube</option>
+                <option value="reddit">Reddit</option>
                 <option value="other">Other</option>
               </select>
             </div>
@@ -4296,21 +4421,20 @@ const PlatformAnalysisPage = () => {
 
   const platformData = [
     { name: 'Facebook', threats: 45, posts: 125000, accuracy: 96.2, color: '#1877F2' },
-    { name: 'Twitter', threats: 32, posts: 89000, accuracy: 94.8, color: '#1DA1F2' },
+    { name: 'X (Twitter)', threats: 32, posts: 89000, accuracy: 94.8, color: '#000000' },
     { name: 'Instagram', threats: 28, posts: 67000, accuracy: 95.1, color: '#E4405F' },
-    { name: 'WhatsApp', threats: 19, posts: 45000, accuracy: 97.3, color: '#25D366' },
-    { name: 'TikTok', threats: 23, posts: 78000, accuracy: 93.7, color: '#000000' },
-    { name: 'YouTube', threats: 15, posts: 34000, accuracy: 96.8, color: '#FF0000' }
+    { name: 'TikTok', threats: 23, posts: 78000, accuracy: 93.7, color: '#FE2C55' },
+    { name: 'Reddit', threats: 15, posts: 34000, accuracy: 96.8, color: '#FF4500' }
   ];
 
   const threatTrendData = [
-    { date: '2024-06-04', Facebook: 42, Twitter: 35, Instagram: 25, WhatsApp: 18, TikTok: 28, YouTube: 12 },
-    { date: '2024-06-05', Facebook: 38, Twitter: 29, Instagram: 31, WhatsApp: 22, TikTok: 25, YouTube: 15 },
-    { date: '2024-06-06', Facebook: 51, Twitter: 41, Instagram: 28, WhatsApp: 19, TikTok: 32, YouTube: 18 },
-    { date: '2024-06-07', Facebook: 47, Twitter: 33, Instagram: 26, WhatsApp: 21, TikTok: 29, YouTube: 14 },
-    { date: '2024-06-08', Facebook: 43, Twitter: 37, Instagram: 29, WhatsApp: 17, TikTok: 26, YouTube: 16 },
-    { date: '2024-06-09', Facebook: 49, Twitter: 31, Instagram: 32, WhatsApp: 20, TikTok: 24, YouTube: 13 },
-    { date: '2024-06-10', Facebook: 45, Twitter: 32, Instagram: 28, WhatsApp: 19, TikTok: 23, YouTube: 15 }
+    { date: '2024-06-04', Facebook: 42, 'X (Twitter)': 35, Instagram: 25, TikTok: 28, Reddit: 12 },
+    { date: '2024-06-05', Facebook: 38, 'X (Twitter)': 29, Instagram: 31, TikTok: 25, Reddit: 15 },
+    { date: '2024-06-06', Facebook: 51, 'X (Twitter)': 41, Instagram: 28, TikTok: 32, Reddit: 18 },
+    { date: '2024-06-07', Facebook: 47, 'X (Twitter)': 33, Instagram: 26, TikTok: 29, Reddit: 14 },
+    { date: '2024-06-08', Facebook: 43, 'X (Twitter)': 37, Instagram: 29, TikTok: 26, Reddit: 16 },
+    { date: '2024-06-09', Facebook: 49, 'X (Twitter)': 31, Instagram: 32, TikTok: 24, Reddit: 13 },
+    { date: '2024-06-10', Facebook: 45, 'X (Twitter)': 32, Instagram: 28, TikTok: 23, Reddit: 15 }
   ];
 
   const contentTypeData = [
@@ -4341,11 +4465,10 @@ const PlatformAnalysisPage = () => {
           >
             <option value="all">All Platforms</option>
             <option value="facebook">Facebook</option>
-            <option value="twitter">Twitter</option>
+            <option value="twitter">X (Twitter)</option>
             <option value="instagram">Instagram</option>
-            <option value="whatsapp">WhatsApp</option>
             <option value="tiktok">TikTok</option>
-            <option value="youtube">YouTube</option>
+            <option value="reddit">Reddit</option>
           </select>
           <select 
             value={timeRange} 
@@ -4539,9 +4662,13 @@ const PlatformAnalysisPage = () => {
 
 const ReportsPage = () => {
   const { colors } = useTheme();
+  const { userReports, updateUserReportStatus } = useUserReports();
+  const [activeTab, setActiveTab] = useState('system');
   const [selectedReport, setSelectedReport] = useState('summary');
   const [dateRange, setDateRange] = useState('7d');
   const [reportFormat, setReportFormat] = useState('pdf');
+  const [selectedUserReport, setSelectedUserReport] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const reportTypes = [
     { id: 'summary', name: 'Executive Summary', description: 'High-level overview of threats and system performance' },
@@ -4566,10 +4693,25 @@ const ReportsPage = () => {
     { label: 'Automated Reports', value: '156', change: '+45%', color: colors.warning }
   ];
 
+  const userReportMetrics = [
+    { label: 'User Reports Submitted', value: userReports.length, change: '+18%', color: colors.primary },
+    { label: 'Under Review', value: userReports.filter(r => r.status === 'under_review').length, change: '', color: colors.warning },
+    { label: 'Investigating', value: userReports.filter(r => r.status === 'investigating').length, change: '', color: colors.secondary },
+    { label: 'Resolved', value: userReports.filter(r => r.status === 'resolved').length, change: '+5', color: colors.success }
+  ];
+
   const generateReport = () => {
     // Simulate report generation
     alert(`Generating ${reportTypes.find(r => r.id === selectedReport)?.name} report for ${dateRange} in ${reportFormat.toUpperCase()} format...`);
   };
+
+  const handleStatusChange = (reportId, newStatus) => {
+    updateUserReportStatus(reportId, newStatus);
+  };
+
+  const filteredUserReports = filterStatus === 'all' 
+    ? userReports 
+    : userReports.filter(report => report.status === filterStatus);
 
   return (
     <div className="space-y-6">
@@ -4579,211 +4721,539 @@ const ReportsPage = () => {
           <h2 className="text-3xl font-bold" style={{ color: colors.text }}>Reports & Analytics</h2>
           <p style={{ color: colors.textSecondary }}>Generate and manage comprehensive threat analysis reports</p>
         </div>
-        <Button variant="primary" icon={Download} onClick={generateReport}>
-          Generate New Report
-        </Button>
+        <div className="flex gap-2">
+          {activeTab === 'system' && (
+            <Button variant="primary" icon={Download} onClick={generateReport}>
+              Generate New Report
+            </Button>
+          )}
+          {activeTab === 'user' && (
+            <Button 
+              variant="primary" 
+              icon={Flag} 
+              onClick={() => window.location.href = '#report'}
+            >
+              Submit New Report
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b" style={{ borderColor: colors.border }}>
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === 'system' ? 'border-b-2' : ''}`}
+          style={{ 
+            borderColor: activeTab === 'system' ? colors.primary : 'transparent',
+            color: activeTab === 'system' ? colors.primary : colors.textSecondary
+          }}
+          onClick={() => setActiveTab('system')}
+        >
+          System Reports
+        </button>
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === 'user' ? 'border-b-2' : ''}`}
+          style={{ 
+            borderColor: activeTab === 'user' ? colors.primary : 'transparent',
+            color: activeTab === 'user' ? colors.primary : colors.textSecondary
+          }}
+          onClick={() => setActiveTab('user')}
+        >
+          User Submitted Reports
+        </button>
       </div>
 
       {/* Report Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {reportMetrics.map((metric, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: metric.color }}>{metric.label}</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: colors.text }}>{metric.value}</p>
-                <p className="text-xs mt-1" style={{ color: metric.color }}>{metric.change} from last period</p>
+        {activeTab === 'system' ? (
+          reportMetrics.map((metric, index) => (
+            <Card key={index} className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: metric.color }}>{metric.label}</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: colors.text }}>{metric.value}</p>
+                  <p className="text-xs mt-1" style={{ color: metric.color }}>{metric.change} from last period</p>
+                </div>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${metric.color}20` }}
+                >
+                  <FileText className="w-6 h-6" style={{ color: metric.color }} />
+                </div>
               </div>
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${metric.color}20` }}
-              >
-                <FileText className="w-6 h-6" style={{ color: metric.color }} />
+            </Card>
+          ))
+        ) : (
+          userReportMetrics.map((metric, index) => (
+            <Card key={index} className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: metric.color }}>{metric.label}</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: colors.text }}>{metric.value}</p>
+                  {metric.change && (
+                    <p className="text-xs mt-1" style={{ color: metric.color }}>{metric.change} from last period</p>
+                  )}
+                </div>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${metric.color}20` }}
+                >
+                  <Flag className="w-6 h-6" style={{ color: metric.color }} />
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {activeTab === 'system' ? (
+        <>
+          {/* Report Generation */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Generate Custom Report</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Report Type</label>
+                <select 
+                  value={selectedReport} 
+                  onChange={(e) => setSelectedReport(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border"
+                  style={{ 
+                    backgroundColor: colors.bgCard, 
+                    borderColor: colors.border,
+                    color: colors.text 
+                  }}
+                >
+                  {reportTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+                <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                  {reportTypes.find(r => r.id === selectedReport)?.description}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Date Range</label>
+                <select 
+                  value={dateRange} 
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border"
+                  style={{ 
+                    backgroundColor: colors.bgCard, 
+                    borderColor: colors.border,
+                    color: colors.text 
+                  }}
+                >
+                  <option value="24h">Last 24 Hours</option>
+                  <option value="7d">Last 7 Days</option>
+                  <option value="30d">Last 30 Days</option>
+                  <option value="90d">Last 90 Days</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Format</label>
+                <select 
+                  value={reportFormat} 
+                  onChange={(e) => setReportFormat(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border"
+                  style={{ 
+                    backgroundColor: colors.bgCard, 
+                    borderColor: colors.border,
+                    color: colors.text 
+                  }}
+                >
+                  <option value="pdf">PDF Document</option>
+                  <option value="excel">Excel Spreadsheet</option>
+                  <option value="csv">CSV Data</option>
+                  <option value="json">JSON Data</option>
+                </select>
               </div>
             </div>
           </Card>
-        ))}
-      </div>
 
-      {/* Report Generation */}
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Generate Custom Report</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Report Type</label>
-            <select 
-              value={selectedReport} 
-              onChange={(e) => setSelectedReport(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border"
-              style={{ 
-                backgroundColor: colors.bgCard, 
-                borderColor: colors.border,
-                color: colors.text 
-              }}
-            >
-              {reportTypes.map(type => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+          {/* Recent Reports */}
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold" style={{ color: colors.text }}>Recent Reports</h3>
+              <Button variant="ghost" icon={Calendar}>View All Reports</Button>
+            </div>
+            <div className="space-y-4">
+              {recentReports.map((report) => (
+                <div key={report.id} className="flex items-center justify-between p-4 rounded-lg border"
+                     style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border }}>
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: colors.primary + '20' }}
+                    >
+                      <FileText className="w-5 h-5" style={{ color: colors.primary }} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold" style={{ color: colors.text }}>{report.name}</h4>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {report.type} • {report.date} • {report.size}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span 
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        report.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {report.status === 'completed' ? 'Completed' : 'Processing'}
+                    </span>
+                    {report.status === 'completed' && (
+                      <Button variant="ghost" size="sm" icon={Download}>Download</Button>
+                    )}
+                  </div>
+                </div>
               ))}
-            </select>
-            <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-              {reportTypes.find(r => r.id === selectedReport)?.description}
-            </p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Date Range</label>
-            <select 
-              value={dateRange} 
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border"
-              style={{ 
-                backgroundColor: colors.bgCard, 
-                borderColor: colors.border,
-                color: colors.text 
-              }}
-            >
-              <option value="24h">Last 24 Hours</option>
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="90d">Last 90 Days</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Format</label>
-            <select 
-              value={reportFormat} 
-              onChange={(e) => setReportFormat(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border"
-              style={{ 
-                backgroundColor: colors.bgCard, 
-                borderColor: colors.border,
-                color: colors.text 
-              }}
-            >
-              <option value="pdf">PDF Document</option>
-              <option value="excel">Excel Spreadsheet</option>
-              <option value="csv">CSV Data</option>
-              <option value="json">JSON Data</option>
-            </select>
-          </div>
-        </div>
-      </Card>
+            </div>
+          </Card>
 
-      {/* Recent Reports */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold" style={{ color: colors.text }}>Recent Reports</h3>
-          <Button variant="ghost" icon={Calendar}>View All Reports</Button>
-        </div>
-        <div className="space-y-4">
-          {recentReports.map((report) => (
-            <div key={report.id} className="flex items-center justify-between p-4 rounded-lg border"
-                 style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border }}>
-              <div className="flex items-center gap-4">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: colors.primary + '20' }}
-                >
-                  <FileText className="w-5 h-5" style={{ color: colors.primary }} />
+          {/* Report Templates */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Report Templates</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reportTypes.map((template) => (
+                <div key={template.id} className="p-4 rounded-lg border cursor-pointer hover:scale-105 transition-transform"
+                     style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}
+                     onClick={() => setSelectedReport(template.id)}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: colors.primary + '20' }}
+                    >
+                      <FileText className="w-4 h-4" style={{ color: colors.primary }} />
+                    </div>
+                    <h4 className="font-semibold" style={{ color: colors.text }}>{template.name}</h4>
+                  </div>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{template.description}</p>
+                  <div className="mt-4 flex justify-between items-center">
+                    <span className="text-xs" style={{ color: colors.textMuted }}>Template</span>
+                    <Button variant="ghost" size="sm">Use Template</Button>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold" style={{ color: colors.text }}>{report.name}</h4>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {report.type} • {report.date} • {report.size}
-                  </p>
+              ))}
+            </div>
+          </Card>
+
+          {/* Scheduled Reports */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Scheduled Reports</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg"
+                   style={{ backgroundColor: colors.bgSecondary }}>
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: colors.success + '20' }}
+                  >
+                    <Clock className="w-5 h-5" style={{ color: colors.success }} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold" style={{ color: colors.text }}>Weekly Executive Summary</h4>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>Every Monday at 9:00 AM</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                  <Button variant="ghost" size="sm" icon={Settings}>Configure</Button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span 
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    report.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}
-                >
-                  {report.status === 'completed' ? 'Completed' : 'Processing'}
-                </span>
-                {report.status === 'completed' && (
-                  <Button variant="ghost" size="sm" icon={Download}>Download</Button>
-                )}
+              
+              <div className="flex items-center justify-between p-4 rounded-lg"
+                   style={{ backgroundColor: colors.bgSecondary }}>
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: colors.warning + '20' }}
+                  >
+                    <Clock className="w-5 h-5" style={{ color: colors.warning }} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold" style={{ color: colors.text }}>Monthly Trend Analysis</h4>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>First day of each month at 8:00 AM</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Paused</span>
+                  <Button variant="ghost" size="sm" icon={Settings}>Configure</Button>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Report Templates */}
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Report Templates</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reportTypes.map((template) => (
-            <div key={template.id} className="p-4 rounded-lg border cursor-pointer hover:scale-105 transition-transform"
-                 style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}
-                 onClick={() => setSelectedReport(template.id)}>
-              <div className="flex items-center gap-3 mb-3">
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: colors.primary + '20' }}
+          </Card>
+        </>
+      ) : (
+        <>
+          {/* User Submitted Reports */}
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold" style={{ color: colors.text }}>User Submitted Reports</h3>
+              <div className="flex items-center gap-2">
+                <label className="text-sm" style={{ color: colors.textSecondary }}>Filter:</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-2 py-1 rounded border text-sm"
+                  style={{ 
+                    backgroundColor: colors.bgCard, 
+                    borderColor: colors.border,
+                    color: colors.text 
+                  }}
                 >
-                  <FileText className="w-4 h-4" style={{ color: colors.primary }} />
-                </div>
-                <h4 className="font-semibold" style={{ color: colors.text }}>{template.name}</h4>
-              </div>
-              <p className="text-sm" style={{ color: colors.textSecondary }}>{template.description}</p>
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-xs" style={{ color: colors.textMuted }}>Template</span>
-                <Button variant="ghost" size="sm">Use Template</Button>
+                  <option value="all">All Reports</option>
+                  <option value="under_review">Under Review</option>
+                  <option value="investigating">Investigating</option>
+                  <option value="resolved">Resolved</option>
+                </select>
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Scheduled Reports */}
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>Scheduled Reports</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg"
-               style={{ backgroundColor: colors.bgSecondary }}>
-            <div className="flex items-center gap-4">
+            
+            {filteredUserReports.length === 0 ? (
+              <div className="text-center py-8">
+                <Flag className="w-12 h-12 mx-auto mb-4 opacity-30" style={{ color: colors.textMuted }} />
+                <p className="text-lg font-medium mb-2" style={{ color: colors.text }}>No reports found</p>
+                <p style={{ color: colors.textSecondary }}>
+                  {filterStatus === 'all' 
+                    ? 'There are no user submitted reports yet.' 
+                    : `There are no reports with status "${filterStatus}".`}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredUserReports.map((report) => (
+                  <div 
+                    key={report.id} 
+                    className="p-4 rounded-lg border"
+                    style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border }}
+                  >
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div 
+                          className="w-10 h-10 rounded-lg flex items-center justify-center mt-1"
+                          style={{ 
+                            backgroundColor: report.urgency === 'critical' 
+                              ? colors.danger + '20' 
+                              : report.urgency === 'high' 
+                                ? colors.warning + '20' 
+                                : colors.primary + '20' 
+                          }}
+                        >
+                          <Flag className="w-5 h-5" style={{ 
+                            color: report.urgency === 'critical' 
+                              ? colors.danger 
+                              : report.urgency === 'high' 
+                                ? colors.warning 
+                                : colors.primary 
+                          }} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold" style={{ color: colors.text }}>
+                              {report.type.charAt(0).toUpperCase() + report.type.slice(1).replace('_', ' ')}
+                            </h4>
+                            <span 
+                              className="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                              style={{ 
+                                backgroundColor: report.urgency === 'critical' 
+                                  ? colors.danger + '20' 
+                                  : report.urgency === 'high' 
+                                    ? colors.warning + '20' 
+                                    : colors.primary + '20',
+                                color: report.urgency === 'critical' 
+                                  ? colors.danger 
+                                  : report.urgency === 'high' 
+                                    ? colors.warning 
+                                    : colors.primary
+                              }}
+                            >
+                              {report.urgency} Urgency
+                            </span>
+                          </div>
+                          <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+                            <span className="capitalize">{report.platform}</span> • {report.timestamp}
+                          </p>
+                          <p className="mt-2" style={{ color: colors.text }}>
+                            {report.description.length > 100 
+                              ? `${report.description.substring(0, 100)}...` 
+                              : report.description}
+                          </p>
+                          {report.url && (
+                            <a 
+                              href={report.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm flex items-center mt-2"
+                              style={{ color: colors.primary }}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" /> View Content
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 min-w-[120px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs" style={{ color: colors.textMuted }}>Status:</span>
+                          <span 
+                            className="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                            style={{ 
+                              backgroundColor: report.status === 'resolved' 
+                                ? colors.success + '20' 
+                                : report.status === 'investigating' 
+                                  ? colors.secondary + '20' 
+                                  : colors.warning + '20',
+                              color: report.status === 'resolved' 
+                                ? colors.success 
+                                : report.status === 'investigating' 
+                                  ? colors.secondary 
+                                  : colors.warning
+                            }}
+                          >
+                            {report.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <select
+                          value={report.status}
+                          onChange={(e) => handleStatusChange(report.id, e.target.value)}
+                          className="w-full px-2 py-1 mt-2 rounded border text-sm"
+                          style={{ 
+                            backgroundColor: colors.bgCard, 
+                            borderColor: colors.border,
+                            color: colors.text 
+                          }}
+                        >
+                          <option value="under_review">Under Review</option>
+                          <option value="investigating">Investigating</option>
+                          <option value="resolved">Resolved</option>
+                        </select>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => setSelectedUserReport(report)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+          
+          {/* User Report Details Modal */}
+          {selectedUserReport && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
               <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: colors.success + '20' }}
-              >
-                <Clock className="w-5 h-5" style={{ color: colors.success }} />
-              </div>
-              <div>
-                <h4 className="font-semibold" style={{ color: colors.text }}>Weekly Executive Summary</h4>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>Every Monday at 9:00 AM</p>
-              </div>
+                className="absolute inset-0 backdrop-blur-sm"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+                onClick={() => setSelectedUserReport(null)}
+              />
+              <Card className="relative z-10 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-semibold" style={{ color: colors.text }}>Report Details</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    icon={X} 
+                    onClick={() => setSelectedUserReport(null)}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Report ID</h4>
+                    <p style={{ color: colors.text }}>{selectedUserReport.id}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Type</h4>
+                    <p style={{ color: colors.text }}>
+                      {selectedUserReport.type.charAt(0).toUpperCase() + selectedUserReport.type.slice(1).replace('_', ' ')}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Platform</h4>
+                    <p style={{ color: colors.text }}>
+                      {selectedUserReport.platform.charAt(0).toUpperCase() + selectedUserReport.platform.slice(1)}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Description</h4>
+                    <p style={{ color: colors.text }}>{selectedUserReport.description}</p>
+                  </div>
+                  {selectedUserReport.url && (
+                    <div>
+                      <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Content URL</h4>
+                      <a 
+                        href={selectedUserReport.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: colors.primary }}
+                      >
+                        {selectedUserReport.url}
+                      </a>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Urgency</h4>
+                    <p style={{ color: colors.text }}>{selectedUserReport.urgency}</p>
+                  </div>
+                  {selectedUserReport.contact && (
+                    <div>
+                      <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Contact</h4>
+                      <p style={{ color: colors.text }}>{selectedUserReport.contact}</p>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Submitted</h4>
+                    <p style={{ color: colors.text }}>{selectedUserReport.timestamp}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium" style={{ color: colors.textMuted }}>Status</h4>
+                    <select
+                      value={selectedUserReport.status}
+                      onChange={(e) => handleStatusChange(selectedUserReport.id, e.target.value)}
+                      className="w-full px-3 py-2 mt-1 rounded border"
+                      style={{ 
+                        backgroundColor: colors.bgCard, 
+                        borderColor: colors.border,
+                        color: colors.text 
+                      }}
+                    >
+                      <option value="under_review">Under Review</option>
+                      <option value="investigating">Investigating</option>
+                      <option value="resolved">Resolved</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-6 gap-2">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setSelectedUserReport(null)}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => {
+                      // Simulate taking action
+                      alert(`Action taken on report ${selectedUserReport.id}`);
+                      setSelectedUserReport(null);
+                    }}
+                  >
+                    Take Action
+                  </Button>
+                </div>
+              </Card>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-              <Button variant="ghost" size="sm" icon={Settings}>Configure</Button>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between p-4 rounded-lg"
-               style={{ backgroundColor: colors.bgSecondary }}>
-            <div className="flex items-center gap-4">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: colors.warning + '20' }}
-              >
-                <Clock className="w-5 h-5" style={{ color: colors.warning }} />
-              </div>
-              <div>
-                <h4 className="font-semibold" style={{ color: colors.text }}>Monthly Trend Analysis</h4>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>First day of each month at 8:00 AM</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Paused</span>
-              <Button variant="ghost" size="sm" icon={Settings}>Configure</Button>
-            </div>
-          </div>
-        </div>
-      </Card>
+          )}
+        </>
+      )}
     </div>
   );
 };
@@ -5516,4 +5986,3 @@ const ChatbotOverlay = () => {
     </>
   );
 };
-
